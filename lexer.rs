@@ -28,7 +28,7 @@ fn main() {
 
     let mut iter = content.chars().peekable();
 
-    while let Some(&_c) = iter.peek() {
+    while iter.peek().is_some() {
         let mut word = String::new();
 
         while let Some(&ch) = iter.peek() {
@@ -37,35 +37,22 @@ fn main() {
                 iter.next();
             } else {
                 if !word.is_empty() {
-                    if word == "int" {
-                        tokens.push(Token::Int);
-                    } else if word == "return" {
-                        tokens.push(Token::Return);
-                    } else if is_integer(&word) {
-                        tokens.push(Token::IntegerLiteral(word.parse::<i64>().unwrap()));
-                    } else {
-                        tokens.push(Token::Identifier(word));
-                    }
+                    let token = match word.as_str() {
+                        "int" => Token::Int,
+                        "return" => Token::Return,
+                        w if is_integer(w) => Token::IntegerLiteral(w.parse().unwrap()),
+                        _ => Token::Identifier(word),
+                    };
+                    tokens.push(token);
                 }
 
-                if ch == '{' {
-                    tokens.push(Token::LBrace);
-                }
-
-                if ch == '}' {
-                    tokens.push(Token::RBrace);
-                }
-
-                if ch == '(' {
-                    tokens.push(Token::LParenthesis);
-                }
-
-                if ch == ')' {
-                    tokens.push(Token::RParenthesis);
-                }
-
-                if ch == ';' {
-                    tokens.push(Token::Semicolon);
+                match ch {
+                    '{' => tokens.push(Token::LBrace),
+                    '}' => tokens.push(Token::RBrace),
+                    '(' => tokens.push(Token::LParenthesis),
+                    ')' => tokens.push(Token::RParenthesis),
+                    ';' => tokens.push(Token::Semicolon),
+                    _ => {}
                 }
 
                 break;
