@@ -1,9 +1,9 @@
 use std::env;
 use std::fs;
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 
-enum Token {
+pub enum Token {
     LBrace,
     RBrace,
     LParenthesis,
@@ -19,13 +19,8 @@ fn is_integer(s: &str) -> bool {
     s.parse::<i64>().is_ok()
 }
 
-fn main() {
-    let args: Vec<String> = env::args().collect();
+pub fn return_tokens(content: String) -> Vec<Token> {
     let mut tokens: Vec<Token> = Vec::new();
-
-    let file_path = &args[1];
-    let content = fs::read_to_string(file_path).expect("Should have been able to read the file");
-
     let mut iter = content.chars().peekable();
 
     while iter.peek().is_some() {
@@ -62,5 +57,14 @@ fn main() {
         iter.next();
     }
 
-    println!("{:#?}", tokens);
+    return tokens;
+}
+
+fn main() {
+    let args: Vec<String> = env::args().collect();
+
+    let file_path = &args[1];
+    let content = fs::read_to_string(file_path).expect("Should have been able to read the file");
+
+    println!("{:#?}", return_tokens(content));
 }
