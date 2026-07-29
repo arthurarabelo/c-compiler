@@ -14,25 +14,21 @@ use std::fs;
 
 mod lexer;
 
-use lexer::{Token, return_tokens};
-
+use lexer::{return_tokens, Token};
 
 #[derive(Debug)]
 enum Exp {
-   Constant(i64)
+    Constant(i64),
 }
 
 #[derive(Debug)]
 enum Statement {
-    Return(Exp)
+    Return(Exp),
 }
 
 #[derive(Debug)]
 enum Function {
-    Function {
-        name: String,
-        body: Statement,
-    },
+    Function { name: String, body: Statement },
 }
 
 #[derive(Debug)]
@@ -40,87 +36,81 @@ enum Program {
     Program(Function),
 }
 
-fn fail(msg: &str) -> ! {
-    eprintln!("Parse error: {msg}");
-    std::process::exit(1);
+struct Parser {
+    tokens: Vec<Token>,
+    pos: usize,
 }
 
-fn parse_exp(tokens: &mut Vec<Token>) -> Exp {
-    let token = tokens.remove(0);
-
-    let exp = match token {
-        Token::IntegerLiteral(n) => Exp::Constant(n),
-        _ => fail("error parsing the expression: constant expected"),
-    };
-
-    return exp;
-}
-
-fn parse_statement(tokens: &mut Vec<Token>) -> Statement {
-    let mut token = tokens.remove(0);
-    if token != Token::Return {
-        fail("error parsing statement: return expected");
-    }
-    
-    let exp = parse_exp(tokens);
-    let statement = Statement::Return(exp);
-
-    token = tokens.remove(0);
-    if token != Token::Semicolon {
-        fail("error parsing statement: semicolon expected");
-    }
- 
-    return statement;
-}
-
-fn parse_function (tokens: &mut Vec<Token>) -> Function{
-    let mut token = tokens.remove(0);
-    if token != Token::Int {
-        fail("error parsing function: int expected");
+impl Parser {
+    fn fail(&mut self, msg: &str) -> ! {
+        eprintln!("Parse error: {msg}");
+        std::process::exit(1);
     }
 
-    token = tokens.remove(0);
-    let name = match token {
-        Token::Identifier(n) => n,
-        _ => fail("error parsing function: identifier expected"),
-    };
+    fn advance(&mut self) -> Option<&Token> {
+        let old_pos = self.pos;
+        self.pos += 1;
 
-    token = tokens.remove(0);
-    if token != Token::LParenthesis {
-        fail("error parsing function: ( expected");
+        return self.tokens.get(old_pos);
     }
 
-    token = tokens.remove(0);
-    if token != Token::RParenthesis  {
-        fail("error parsing function: ) expected");
+    fn expect(&mut self, expected: Token, msg: &str) {
+        match self.advance() {
+            Some(token) if *token == expected => {}
+            _ => self.fail(msg),
+        };
     }
 
-    token = tokens.remove(0);
-    if token != Token::LBrace  {
-        fail("error parsing function: { expected");
+    fn parse_exp(&mut self) -> Exp {
+        let exp = match self.advance() {
+            Some(Token::IntegerLiteral(n)) => Exp::Constant(*n),
+            _ => self.fail("error parsing the expression: constant expected"),
+        };
+
+        return exp;
     }
 
-    let statement = parse_statement(tokens);
+    fn parse_statement(&mut self) -> Statement {
+        self.expect(Token::Return, "error parsing statement: return expected");
 
-    token = tokens.remove(0);
-    if token != Token::RBrace  {
-        fail("error parsing function: } expected");
+        let exp = self.parse_exp();
+
+        self.expect(Token::Semicolon, "error parsing statement: semicolon expected");
+
+        return Statement::Return(exp);
     }
-    
-    let function = Function::Function {
-        name: name,
-        body: statement
-    };
 
-    return function;
-}
+    fn parse_function(&mut self) -> Function {
+        self.expect(Token::Int, "error parsing function: int expected");
 
-fn parse_program(tokens: &mut Vec<Token>) -> Program {
-    let function = parse_function(tokens);
+        let name = match self.advance() {
+            Some(Token::Identifier(n)) => n.clone(),
+            _ => self.fail("error parsing function: identifier expected"),
+        };
 
-    let program = Program::Program(function);
+        self.expect(Token::LParenthesis, "error parsing function: ( expected");
 
-    return program;
+        self.expect(Token::RParenthesis, "error parsing function: ) expected");
+
+        self.expect(Token::LBrace, "error parsing function: { expected");
+
+        let statement = self.parse_statement();
+
+        self.expect(Token::RBrace, "error parsing function: } expected");
+
+        return Function::Function {
+            name: name,
+            body: statement,
+        };
+    }
+
+    fn parse_program(&mut self) -> Program {
+        let function = self.parse_function();
+
+        let program = Program::Program(function);
+
+        return program;
+    }
 }
 
 fn main() {
@@ -131,5 +121,11 @@ fn main() {
 
     let mut tokens = return_tokens(content);
 
-    println!("{:#?}", parse_program(&mut tokens));
+    println!(
+        "{:#?}",
+        Parser::parse_program(&mut Parser {
+            tokens: tokens,
+            pos: 0
+        })
+    );
 }
