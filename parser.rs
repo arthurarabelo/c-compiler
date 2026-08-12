@@ -1,4 +1,4 @@
-/* A ideia é aninhar os enums de cada non-terminal:
+/* A ideia é aninhar os pub enums de cada non-terminal:
 
 Program::Program(
     Function::Function {
@@ -9,36 +9,43 @@ Program::Program(
 
 */
 
+// TODO: instead of using match and fail, maybe I could use the operator ? and Result<T, E>
+
 use std::env;
 use std::fs;
 
-mod lexer;
-
-use lexer::{return_tokens, Token};
+#[path = "lexer.rs"] pub mod lexer;
+use self::lexer::{return_tokens, Token};
 
 #[derive(Debug)]
-enum Exp {
+pub enum Exp {
     Constant(i64),
 }
 
 #[derive(Debug)]
-enum Statement {
+pub enum Statement {
     Return(Exp),
 }
 
 #[derive(Debug)]
-enum Function {
-    Function { name: String, body: Statement },
+pub struct FunctionInfo {
+    pub name: String,
+    pub body: Statement
 }
 
 #[derive(Debug)]
-enum Program {
+pub enum Function {
+    Function(FunctionInfo)
+}
+
+#[derive(Debug)]
+pub enum Program {
     Program(Function),
 }
 
-struct Parser {
-    tokens: Vec<Token>,
-    pos: usize,
+pub struct Parser {
+    pub tokens: Vec<Token>,
+    pub pos: usize,
 }
 
 impl Parser {
@@ -98,13 +105,15 @@ impl Parser {
 
         self.expect(Token::RBrace, "error parsing function: } expected");
 
-        return Function::Function {
-            name: name,
-            body: statement,
-        };
+        return Function::Function(
+            FunctionInfo {
+                name: name,
+                body: statement
+            }
+        );
     }
 
-    fn parse_program(&mut self) -> Program {
+    pub fn parse_program(&mut self) -> Program {
         let function = self.parse_function();
 
         let program = Program::Program(function);
@@ -119,7 +128,7 @@ fn main() {
     let file_path = &args[1];
     let content = fs::read_to_string(file_path).expect("Should have been able to read the file");
 
-    let mut tokens = return_tokens(content);
+    let tokens = return_tokens(content);
 
     println!(
         "{:#?}",
