@@ -14,21 +14,13 @@ C source → [Lexer] → Tokens → [Parser] → AST → [Code Gen] → x86 Asse
 2. **Parser** — consumes the token stream and builds an Abstract Syntax Tree via recursive descent.
 3. **Code Generation** — walks the AST and emits x86 assembly instructions.
 
-## Building
-
-Requires the [Rust toolchain](https://rustup.rs/).
-
-```bash
-cargo build
-```
-
 ## Roadmap
 
 Following the tutorial series, the planned feature milestones are:
 
 - [x] Lexer
-- [ ] Parser & AST
-- [ ] Code generation (return integer)
+- [x] Parser & AST
+- [x] Code generation (return integer)
 - [ ] Unary operators (`-`, `~`, `!`)
 - [ ] Binary operators and arithmetic
 - [ ] Conditionals (`if`/`else`, ternary)
